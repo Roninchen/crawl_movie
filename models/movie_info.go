@@ -37,7 +37,7 @@ type  MovieInfo struct {
 
 func init() {
 	orm.Debug = true // 是否开启调试模式 调试模式下会打印出sql语句
-	orm.RegisterDataBase("default","mysql","fuck_hacker:690383f40a51d07c@tcp(111.231.84.238:3306)/movie?charset=utf8&loc=Local",30)
+	orm.RegisterDataBase("default","mysql","fuck_hacker:690383f40a51d07c@tcp(localhost:3306)/movie?charset=utf8&loc=Local",30)
 	orm.RegisterModel(new(MovieInfo))
 	db = orm.NewOrm()
 }
