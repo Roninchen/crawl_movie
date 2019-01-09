@@ -66,7 +66,7 @@ func (c *CrawlMovieController) CrawlMovie() {
 		if strings.Contains(sUrl, "subject") {
 			logs.Info(sUrl)
 			go models.Run(sUrl)
-			time.Sleep(time.Second*5)
+			time.Sleep(time.Second*3)
 		}
 	}
 }
