@@ -2,11 +2,12 @@ package controllers
 
 import (
 	"crawl_movie/models"
+	"strings"
+	"time"
 
 	"github.com/astaxie/beego"
 
 	"github.com/astaxie/beego/logs"
-	"time"
 )
 
 type CrawlMovieController struct {
@@ -19,9 +20,9 @@ func (c *CrawlMovieController) CrawlMovie() {
 	models.ConnectRedis("111.231.84.238:6379")
 
 	//爬虫入口url
-	sUrl := "https://movie.douban.com/subject/27133303/"
+	sUrl := "https://movie.douban.com/subject/3878007/"
 	models.PutinQueue(sUrl)
-	go models.IP66()
+	// go models.IP66()
 	for {
 		//models.IP66()
 		length := models.GetQueueLength()
@@ -34,8 +35,38 @@ func (c *CrawlMovieController) CrawlMovie() {
 		if models.IsVisit(sUrl) {
 			continue
 		}
-		logs.SetLogger(sUrl)
-		go models.Run(sUrl)
-		time.Sleep(2000)
+		if strings.Contains(sUrl,"celebrity") {
+			logs.Info("contains celebrity continue!")
+			continue
+		}
+		if strings.Contains(sUrl,"short_video"){
+			logs.Info("contains short_video continue!")
+			continue
+		}
+		if strings.Contains(sUrl, "photos") {
+			logs.Info("contains photos continue!")
+			continue
+		}
+		if strings.Contains(sUrl, "mupload") {
+			logs.Info("contains mupload continue!")
+			continue
+		}
+		if strings.Contains(sUrl, "trailer") {
+			logs.Info("contains trailer continue!")
+			continue
+		}
+		if strings.Contains(sUrl, "video") {
+			logs.Info("contains video continue!")
+			continue
+		}
+		if strings.Contains(sUrl, "review") {
+			logs.Info("contains review continue!")
+			continue
+		}
+		if strings.Contains(sUrl, "subject") {
+			logs.Info(sUrl)
+			go models.Run(sUrl)
+			time.Sleep(time.Second*5)
+		}
 	}
 }
