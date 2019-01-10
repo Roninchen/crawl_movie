@@ -1,9 +1,11 @@
 package models
 
 import (
+	"crawl_movie/conf"
 	"github.com/astaxie/beego/logs"
 	"github.com/astaxie/beego/orm"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/spf13/viper"
 	"io/ioutil"
 	"regexp"
 	"strconv"
@@ -31,14 +33,22 @@ type  MovieInfo struct {
 	Movie_grade string
 	Remark string
 	Movie_summary string
+	Movie_hot_comment string
 	_Create_time string
 	_Modify_time string
 	_Status int64
 }
 
 func init() {
+	//初始化配置文件
+	conf.Init("")
+	host := viper.GetString("mysql.host")
+	port := viper.GetString("mysql.port")
+	name := viper.GetString("mysql.name")
+	password := viper.GetString("mysql.password")
+	database := viper.GetString("mysql.database")
 	orm.Debug = true // 是否开启调试模式 调试模式下会打印出sql语句
-	orm.RegisterDataBase("default","mysql","fuck_hacker:690383f40a51d07c@tcp(111.231.84.238:3306)/movie?charset=utf8&loc=Local",30)
+	orm.RegisterDataBase("default","mysql",name+":"+password+"@tcp("+host+":"+port+")/"+database+"?charset=utf8&loc=Local",30)
 	orm.RegisterModel(new(MovieInfo))
 	db = orm.NewOrm()
 }
@@ -87,11 +97,34 @@ func GetMovieSummary(movieHtml string) string {
 	}
 	movieSummary :=""
 	for _,v := range result{
-		movieSummary += v[1] + "/n"
+		movieSummary += v[1] + "\n"
 	}
-	logs.Info("简介:"+movieHtml)
+	logs.Info("简介:"+movieSummary)
 	movieSummary = strings.Replace(movieSummary,"class=\"\">","",-1)
-	return strings.Trim(movieSummary," /n")
+	movieSummary = strings.Replace(movieSummary,">","",-1)
+	return strings.Trim(movieSummary," \n")
+}
+//获得电影热评
+func GetMovieHotComment(movieHtml string) string {
+	if movieHtml == ""{
+		return ""
+	}
+	movieHtml = strings.Replace(movieHtml,"\n"," ",-1)
+	reg := regexp.MustCompile(`<span.*?class="short">(.*?)</span>`)
+	result := reg.FindAllStringSubmatch(movieHtml, -1)
+	if len(result)==0 {
+		return ""
+	}
+	hotComment :=""
+	var i = int64(1)
+	for _,v := range result{
+		if strings.Contains(v[1], "substring") {
+			continue
+		}
+		hotComment +="热评" + strconv.FormatInt(i,10) +":" + v[1] +" \n"
+		i++
+	}
+	return strings.Trim(hotComment," \n")
 }
 //获得电影导演
 func GetMovieDirector(movieHtml string) string{
@@ -267,6 +300,7 @@ func Run(sUrl string)  {
 			movieInfo.Movie_pic = GetMoviePhoto(sMovieHtml)
 			movieInfo.Movie_country = GetMovieCountry(sMovieHtml)
 			movieInfo.Movie_summary = GetMovieSummary(sMovieHtml)
+			movieInfo.Movie_hot_comment = GetMovieHotComment(sMovieHtml)
 
 			AddMovie(&movieInfo)
 		}
@@ -279,8 +313,6 @@ func Run(sUrl string)  {
 			if strings.Contains(url, "subject") {
 				PutinQueue(url)
 			}
-			//PutinQueue(url)
-			//c.Ctx.WriteString("<br>" + url + "</br>")
 		}
 
 		//sUrl 应当记录到 访问set中
@@ -297,7 +329,6 @@ func PutUrl(sMovieHtml string,sUrl string)  {
 	for _,url := range urls{
 		logs.Info(url)
 		PutinQueue(url)
-		//c.Ctx.WriteString("<br>" + url + "</br>")
 	}
 
 	//sUrl 应当记录到 访问set中

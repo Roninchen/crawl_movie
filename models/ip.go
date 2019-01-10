@@ -112,16 +112,15 @@ func ReturnIp() string {
 	ipurl := "http://localhost:8090/get"
 	resp, err := http.Get(ipurl)
 	if err != nil{
-		fmt.Println(err)
+		logs.Error(err)
 	}
 	body,err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println(err)
+		logs.Error(err)
 	}
-	logs.Info(body)
 	err = json.Unmarshal([]byte(string(body)), &result)
 	if err != nil {
-		fmt.Println(err)
+		logs.Error(err)
 	}
 	ip :=  "http://" + result.Ip + ":" + strconv.Itoa(result.Port)
 	return ip

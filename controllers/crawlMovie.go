@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"crawl_movie/models"
+	"github.com/spf13/viper"
 	"strings"
 	"time"
 
@@ -17,7 +18,7 @@ type CrawlMovieController struct {
 func (c *CrawlMovieController) CrawlMovie() {
 
 	//连接到redis
-	models.ConnectRedis("111.231.84.238:6379")
+	models.ConnectRedis(viper.GetString("redis.host")+":"+viper.GetString("redis.port"))
 
 	//爬虫入口url
 	sUrl := "https://movie.douban.com/subject/3878007/"
