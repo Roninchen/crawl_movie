@@ -16,7 +16,7 @@ type CrawlMovieController struct {
 func (c *CrawlMovieController) CrawlMovie() {
 
 	//连接到redis
-	models.ConnectRedis("111.231.84.238:6379")
+	models.ConnectRedis("***:***")
 
 	//爬虫入口url
 	sUrl := "https://movie.douban.com/subject/27133303/"
