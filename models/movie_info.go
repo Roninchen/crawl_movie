@@ -30,6 +30,7 @@ type  MovieInfo struct {
 	Movie_span string
 	Movie_grade string
 	Remark string
+	Movie_summary string
 	_Create_time string
 	_Modify_time string
 	_Status int64
@@ -72,6 +73,25 @@ func GetMovieName(movieHtml string)string{
 		return ""
 	}
 	return string(result[0][1])
+}
+//获得电影简介
+func GetMovieSummary(movieHtml string) string {
+	if movieHtml == ""{
+		return ""
+	}
+	movieHtml = strings.Replace(movieHtml,"\n"," ",-1)
+	reg := regexp.MustCompile(`<span.*?property="v:summary"(.*?)</span>`)
+	result := reg.FindAllStringSubmatch(movieHtml, -1)
+	if len(result)==0 {
+		return ""
+	}
+	movieSummary :=""
+	for _,v := range result{
+		movieSummary += v[1] + "/n"
+	}
+	logs.Info("简介:"+movieHtml)
+	movieSummary = strings.Replace(movieSummary,"class=\"\">","",-1)
+	return strings.Trim(movieSummary," /n")
 }
 //获得电影导演
 func GetMovieDirector(movieHtml string) string{
@@ -246,6 +266,7 @@ func Run(sUrl string)  {
 			movieInfo.Movie_language = GetMovieLanguage(sMovieHtml)
 			movieInfo.Movie_pic = GetMoviePhoto(sMovieHtml)
 			movieInfo.Movie_country = GetMovieCountry(sMovieHtml)
+			movieInfo.Movie_summary = GetMovieSummary(sMovieHtml)
 
 			AddMovie(&movieInfo)
 		}
