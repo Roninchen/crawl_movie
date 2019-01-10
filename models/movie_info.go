@@ -118,7 +118,7 @@ func GetMovieHotComment(movieHtml string) string {
 	hotComment :=""
 	var i = int64(1)
 	for _,v := range result{
-		if strings.Contains(v[1], "substring") {
+		if strings.Contains(v[1], "substring") || strings.Contains(v[1],"summary") {
 			continue
 		}
 		hotComment +="热评" + strconv.FormatInt(i,10) +":" + v[1] +" \n"
