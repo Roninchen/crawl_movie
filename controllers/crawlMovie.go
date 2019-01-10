@@ -35,32 +35,7 @@ func (c *CrawlMovieController) CrawlMovie() {
 		if models.IsVisit(sUrl) {
 			continue
 		}
-		if strings.Contains(sUrl,"celebrity") {
-			logs.Info("contains celebrity continue!")
-			continue
-		}
-		if strings.Contains(sUrl,"short_video"){
-			logs.Info("contains short_video continue!")
-			continue
-		}
-		if strings.Contains(sUrl, "photos") {
-			logs.Info("contains photos continue!")
-			continue
-		}
-		if strings.Contains(sUrl, "mupload") {
-			logs.Info("contains mupload continue!")
-			continue
-		}
-		if strings.Contains(sUrl, "trailer") {
-			logs.Info("contains trailer continue!")
-			continue
-		}
-		if strings.Contains(sUrl, "video") {
-			logs.Info("contains video continue!")
-			continue
-		}
-		if strings.Contains(sUrl, "review") {
-			logs.Info("contains review continue!")
+		if !URLFilter(sUrl){
 			continue
 		}
 		if strings.Contains(sUrl, "subject") {
@@ -69,4 +44,68 @@ func (c *CrawlMovieController) CrawlMovie() {
 			time.Sleep(time.Second*3)
 		}
 	}
+}
+
+func URLFilter(sUrl string) bool {
+	if strings.Contains(sUrl,"celebrity") {
+		logs.Info("contains celebrity continue!")
+		return false
+	}
+	if strings.Contains(sUrl,"short_video"){
+		logs.Info("contains short_video continue!")
+		return false
+	}
+	if strings.Contains(sUrl, "photos") {
+		logs.Info("contains photos continue!")
+		return false
+	}
+	if strings.Contains(sUrl, "mupload") {
+		logs.Info("contains mupload continue!")
+		return false
+	}
+	if strings.Contains(sUrl, "trailer") {
+		logs.Info("contains trailer continue!")
+		return false
+	}
+	if strings.Contains(sUrl, "video") {
+		logs.Info("contains video continue!")
+		return false
+	}
+	if strings.Contains(sUrl, "review") {
+		logs.Info("contains review continue!")
+		return false
+	}
+	if strings.Contains(sUrl, "questions") {
+		logs.Info("contains questions continue!")
+		return false
+	}
+	if strings.Contains(sUrl, "discussion") {
+		logs.Info("contains discussion continue!")
+		return false
+	}
+	if strings.Contains(sUrl, "doulists") {
+		logs.Info("contains doulists continue!")
+		return false
+	}
+	if strings.Contains(sUrl, "awards") {
+		logs.Info("contains awards continue!")
+		return false
+	}
+	if strings.Contains(sUrl, "wishes") {
+		logs.Info("contains awards continue!")
+		return false
+	}
+	if strings.Contains(sUrl, "collections") {
+		logs.Info("contains collections continue!")
+		return false
+	}
+	if strings.Contains(sUrl, "update_image") {
+		logs.Info("contains update_image continue!")
+		return false
+	}
+	if strings.Contains(sUrl, "comments") {
+		logs.Info("contains comments continue!")
+		return false
+	}
+	return true
 }

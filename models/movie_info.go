@@ -255,7 +255,10 @@ func Run(sUrl string)  {
 
 		for _,url := range urls{
 			logs.Info(url)
-			PutinQueue(url)
+			if strings.Contains(url, "subject") {
+				PutinQueue(url)
+			}
+			//PutinQueue(url)
 			//c.Ctx.WriteString("<br>" + url + "</br>")
 		}
 
