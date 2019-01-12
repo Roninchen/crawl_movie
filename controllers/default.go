@@ -27,4 +27,5 @@ func (c *MainController) Concurrency() {
 		logs.Info("第%d个启动",j)
 		go http.Get(url)
 	}
+
 }

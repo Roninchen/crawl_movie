@@ -34,6 +34,8 @@ type  MovieInfo struct {
 	Remark string
 	Movie_summary string
 	Movie_hot_comment string
+	Episode string
+	Season string
 	_Create_time string
 	_Modify_time string
 	_Status int64
@@ -256,10 +258,28 @@ func GetMovieId(movieHtml string) int64 {
 	s,_ :=strconv.Atoi(result[0][1])
 	return int64(s)
 }
+//获取剧集数
+func GetEpisode(movieHtml string)string{
+	reg := regexp.MustCompile(`<span.*?class="pl">集数:</span>(.*?)<br/>`)
+	result := reg.FindAllStringSubmatch(movieHtml, -1)
+	if len(result)==0 {
+		return ""
+	}
+	return string(result[0][1])
+}
 
+//获取季数
+func GetSeason(movieHtml string)string{
+	reg := regexp.MustCompile(`<span.*?class="pl">季数:</span>(.*?)<br/>`)
+	result := reg.FindAllStringSubmatch(movieHtml, -1)
+	if len(result)==0 {
+		return ""
+	}
+	return string(result[0][1])
+}
 
 func GetMovieUrls(movieHtml string)[]string{
-	reg := regexp.MustCompile(`<a.*?href="(https://movie.douban.com/.*?)"`)
+	reg := regexp.MustCompile(`<a.*?href="(https://movie.douban.com/subject/.*?)"`)
 	result := reg.FindAllStringSubmatch(movieHtml, -1)
 
 	var movieSets []string
@@ -287,31 +307,35 @@ func Run(sUrl string)  {
 		movieInfo.Movie_name = GetMovieName(sMovieHtml)
 		//记录电影信息
 		if movieInfo.Movie_name != "" {
-			movieInfo.Movie_id = GetMovieId(sMovieHtml)
-			movieInfo.Movie_name = GetMovieName(sMovieHtml)
-			movieInfo.Movie_director = GetMovieDirector(sMovieHtml)
-			movieInfo.Movie_writer = GetMovieWriter(sMovieHtml)
-			movieInfo.Movie_main_character = GetMovieMainCharacters(sMovieHtml)
-			movieInfo.Movie_grade = GetMovieGrade(sMovieHtml)
-			movieInfo.Movie_type = GetMovieGenre(sMovieHtml)
-			movieInfo.Movie_on_time = GetMovieOnTime(sMovieHtml)
-			movieInfo.Movie_span = GetMovieRunningTime(sMovieHtml)
-			movieInfo.Movie_language = GetMovieLanguage(sMovieHtml)
-			movieInfo.Movie_pic = GetMoviePhoto(sMovieHtml)
-			movieInfo.Movie_country = GetMovieCountry(sMovieHtml)
-			movieInfo.Movie_summary = GetMovieSummary(sMovieHtml)
-			movieInfo.Movie_hot_comment = GetMovieHotComment(sMovieHtml)
+			movieInfo.Movie_id 				= GetMovieId(sMovieHtml)
+			movieInfo.Movie_name 			= GetMovieName(sMovieHtml)
+			movieInfo.Movie_director 		= GetMovieDirector(sMovieHtml)
+			movieInfo.Movie_writer 			= GetMovieWriter(sMovieHtml)
+			movieInfo.Movie_main_character 	= GetMovieMainCharacters(sMovieHtml)
+			movieInfo.Movie_grade 			= GetMovieGrade(sMovieHtml)
+			movieInfo.Movie_type 			= GetMovieGenre(sMovieHtml)
+			movieInfo.Movie_on_time 		= GetMovieOnTime(sMovieHtml)
+			movieInfo.Movie_span 			= GetMovieRunningTime(sMovieHtml)
+			movieInfo.Movie_language 		= GetMovieLanguage(sMovieHtml)
+			movieInfo.Movie_pic 			= GetMoviePhoto(sMovieHtml)
+			movieInfo.Movie_country 		= GetMovieCountry(sMovieHtml)
+			movieInfo.Movie_summary 		= GetMovieSummary(sMovieHtml)
+			movieInfo.Movie_hot_comment 	= GetMovieHotComment(sMovieHtml)
+			movieInfo.Episode 				= GetEpisode(sMovieHtml)
+			movieInfo.Season 				= GetSeason(sMovieHtml)
 
 			AddMovie(&movieInfo)
 		}
 		logs.Info("提取该页面的所有连接")
-		//提取该页面的所有连接
-		urls := GetMovieUrls(sMovieHtml)
-
-		for _,url := range urls{
-			logs.Info(url)
-			if strings.Contains(url, "subject") {
-				PutinQueue(url)
+		//如果redis数据小于100万继续提取链接
+		if GetQueueLength()<=1000000 {
+			//提取该页面的所有连接
+			urls := GetMovieUrls(sMovieHtml)
+			for _,url := range urls{
+				logs.Info(url)
+				if strings.Contains(url, "subject") {
+					PutinQueue(url)
+				}
 			}
 		}
 
