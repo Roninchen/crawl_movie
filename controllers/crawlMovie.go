@@ -36,7 +36,7 @@ func (c *CrawlMovieController) CrawlMovie() {
 		if models.IsVisit(sUrl) {
 			continue
 		}
-		if !URLFilter(sUrl){
+		if models.GetQueueLength()>10000 && !URLFilter(sUrl){
 			continue
 		}
 		if strings.Contains(sUrl, "subject") {

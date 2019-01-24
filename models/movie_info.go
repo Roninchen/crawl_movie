@@ -328,7 +328,9 @@ func Run(sUrl string)  {
 		}
 		logs.Info("提取该页面的所有连接")
 		//如果redis数据小于100万继续提取链接
-		if GetQueueLength()<=1000000 {
+		queueLen := GetQueueLength()
+		logs.Info("queueLen:",queueLen)
+		if queueLen<=1000000 {
 			//提取该页面的所有连接
 			urls := GetMovieUrls(sMovieHtml)
 			for _,url := range urls{
