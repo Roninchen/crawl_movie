@@ -1,0 +1,22 @@
+syntax="proto3";
+
+package movie;
+
+message MovieResult {
+
+    int64 code = 1;
+    string message = 2;
+    bytes data = 3;
+}
+
+message MovieRequest{
+
+    string method = 1;
+    string params = 2;
+}
+
+service MovieService{
+
+    rpc GetResult(MovieRequest)returns (MovieResult){}
+
+}

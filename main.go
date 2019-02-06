@@ -1,13 +1,18 @@
 package main
 
 import (
+	"crawl_movie/movie"
 	_ "crawl_movie/routers"
-
 	"github.com/astaxie/beego"
+	"google.golang.org/grpc"
+	"net"
+
 	//"github.com/astaxie/beego/logs"
 )
 
 func main() {
+
+	go grpcgo()
 	beego.Run()
 	//	log := logs.NewLogger(10000)  // 创建一个日志记录器，参数为缓冲区的大小
 	//	     log.SetLogger("console", "")  // 设置日志记录方式：控制台记录
@@ -23,5 +28,18 @@ func main() {
 	//	     log.Informational("Informational")
 	//	     log.Debug("Debug")
 
-	//	     log.Close()
+	//	     log.Close
+
+}
+func grpcgo()  {
+		serviceAddress := ":50052"
+		movieservice := new(movie.MovieService)
+
+		ls, _ := net.Listen("tcp", serviceAddress)
+
+		gs := grpc.NewServer()
+
+		movie.RegisterMovieServiceServer(gs, movieservice)
+
+		gs.Serve(ls)
 }

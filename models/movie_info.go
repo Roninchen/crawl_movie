@@ -5,6 +5,8 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/astaxie/beego/orm"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/golang/glog"
+	"github.com/jinzhu/gorm"
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"regexp"
@@ -15,30 +17,31 @@ import (
 
 var (
 	db orm.Ormer
+	gdb *gorm.DB
 )
 
 type  MovieInfo struct {
-	Id int64
-	Movie_id int64
-	Movie_name string
-	Movie_pic string
-	Movie_director string
-	Movie_writer string
-	Movie_country string
-	Movie_language string
-	Movie_main_character string
-	Movie_type string
-	Movie_on_time  string
-	Movie_span string
-	Movie_grade string
-	Remark string
-	Movie_summary string
-	Movie_hot_comment string
-	Episode string
-	Season string
-	_Create_time string
-	_Modify_time string
-	_Status int64
+	Id 						int64  `json:"id"`
+	Movie_id 				int64  `json:"movie_id"`
+	Movie_name 				string `json:"movie_name"`
+	Movie_pic 				string `json:"movie_pic"`
+	Movie_director 			string `json:"movie_director"`
+	Movie_writer 			string `json:"movie_writer"`
+	Movie_country 			string `json:"movie_country"`
+	Movie_language 			string `json:"movie_language"`
+	Movie_main_character 	string `json:"movie_main_character"`
+	Movie_type 				string `json:"movie_type"`
+	Movie_on_time  			string `json:"movie_on_time"`
+	Movie_span 				string `json:"movie_span"`
+	Movie_grade 			string `json:"movie_grade"`
+	Remark 					string `json:"remark"`
+	Movie_summary 			string `json:"movie_summary"`
+	Movie_hot_comment 		string `json:"movie_hot_comment"`
+	Episode 				string `json:"episode"`
+	Season 					string `json:"season"`
+	_Create_time 			string `json:"_create_time"`
+	_Modify_time 			string `json:"_modify_time"`
+	_Status 				int64  `json:"_status"`
 }
 
 func init() {
@@ -53,8 +56,22 @@ func init() {
 	orm.RegisterDataBase("default","mysql",name+":"+password+"@tcp("+host+":"+port+")/"+database+"?charset=utf8&loc=Local",30)
 	orm.RegisterModel(new(MovieInfo))
 	db = orm.NewOrm()
+
+	//grom
+	gdb,_=gorm.Open("mysql",name+":"+password+"@tcp("+host+":"+port+")/"+database+"?charset=utf8&loc=Local")
+	gdb.LogMode(true) // open debug
+
 }
 
+func GetMovie(maps map[string]string) (movieInfo []MovieInfo) {
+	//err :=gdb.Model(&MovieInfo{}).Where(maps).Find(&movieInfo).Order("_modify_time DESC", true).Error
+	_,err :=db.QueryTable("movie_info").Filter("movie_name__contains",maps["movie_name"]).All(&movieInfo)
+	if err != nil {
+		glog.Info("数据库查询错误")
+		return nil
+	}
+	return movieInfo
+}
 func AddMovie(movie_info *MovieInfo)(int64,error){
 
 		movie :=new(MovieInfo)
