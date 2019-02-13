@@ -3,6 +3,7 @@ package controllers
 import (
 	"crawl_movie/models"
 	"github.com/spf13/viper"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,14 +15,16 @@ import (
 type CrawlMovieController struct {
 	beego.Controller
 }
-
+type UpdateMovieController struct {
+	beego.Controller
+}
 func (c *CrawlMovieController) CrawlMovie() {
 
 	//连接到redis
 	models.ConnectRedis(viper.GetString("redis.host")+":"+viper.GetString("redis.port"))
 
 	//爬虫入口url
-	sUrl := "https://movie.douban.com/subject/3878007/"
+	sUrl := "https://movie.douban.com/subject/26266893/?from=playing_poster"
 	models.PutinQueue(sUrl)
 	// go models.IP66()
 	for {
@@ -36,7 +39,7 @@ func (c *CrawlMovieController) CrawlMovie() {
 		if models.IsVisit(sUrl) {
 			continue
 		}
-		if models.GetQueueLength()>10000 && !URLFilter(sUrl){
+		if models.GetQueueLength()>100000 && !URLFilter(sUrl){
 			continue
 		}
 		if strings.Contains(sUrl, "subject") {
@@ -109,4 +112,55 @@ func URLFilter(sUrl string) bool {
 		return false
 	}
 	return true
+}
+
+func(c *UpdateMovieController)UpdateMovie(){
+	movieInfo, err := models.GetMovieGradeIsZero()
+	if err != nil {
+		c.Data["json"] = map[string]interface{}{"success": 1, "message": "err","data":err}
+		c.ServeJSON()
+		return
+	}
+	if len(movieInfo) < 1 {
+		c.Data["json"] = map[string]interface{}{"success": 1, "message": "IS NULL","data":""}
+		c.ServeJSON()
+		return
+	}
+	if movieInfo == nil {
+		c.Data["json"] = map[string]interface{}{"success": 1, "message": "IS NULL","data":""}
+		c.ServeJSON()
+		return
+	}
+	logs.Info("信息长度:",len(movieInfo))
+	for _,v := range movieInfo{
+		movieId := strconv.FormatInt(v.Movie_id,10)
+		url := "https://movie.douban.com/subject/"+movieId +"/"
+		movieInfo, err, _ := models.ReturnMovieInfoByUrl(url)
+		if err != nil {
+			logs.Info(err)
+			//c.Data["json"] = map[string]interface{}{"success": 1, "message": "err","data":err}
+			//c.ServeJSON()
+			continue
+		}
+		if movieInfo == nil {
+			logs.Info("movieInfo is null")
+			//c.Data["json"] = map[string]interface{}{"success": 1, "message": "movieInfo is null","data":err}
+			//c.ServeJSON()
+			continue
+		}
+		movieInfo.Id = v.Id
+		err = models.UpdateMovieGrade(movieInfo)
+		if err != nil {
+			logs.Info(err)
+			//c.Data["json"] = map[string]interface{}{"success": 1, "message": "err","data":err}
+			//c.ServeJSON()
+			continue
+		}
+		//c.Data["json"] = map[string]interface{}{"success": 0, "message": "ok","data":movieInfo}
+		//c.ServeJSON()
+		//return
+	}
+	c.Data["json"] = map[string]interface{}{"success": 0, "message": "ok","data":movieInfo}
+	c.ServeJSON()
+	return
 }

@@ -306,51 +306,75 @@ func GetMovieUrls(movieHtml string)[]string{
 
 	return movieSets
 }
+func GetMovieGradeIsZero() (movieInfo []MovieInfo,err error) {
+	_, err = db.Raw("SELECT * FROM movie_info where movie_grade < ? and movie_on_time > ? and _modify_time < ? ORDER BY _modify_time ASC", 1, "2019-00-00 00:00:00","2019-02-07 00:00:00").QueryRows(&movieInfo)
+	//_, err = db.QueryTable("movie_info").Filter("movie_grade < ?", 1).Filter("movie_on_time > ? ", "'2019-00-00 00:00:00'").All(&movieInfo)
+	if err != nil {
+		logs.Info(err)
+		return nil,err
+	}
+	return movieInfo,nil
+}
+func UpdateMovieGrade(info *MovieInfo) error {
+	_, err := db.Update(info)
+	if err != nil {
+		logs.Info(err)
+		return err
+	}
+	return nil
+}
+func Run(sUrl string) {
+	//logs.Info("Run！！！")
+	//var movieInfo MovieInfo
+	//rsp := GetRep(sUrl)
+	//if rsp != nil {
+	//
+	//	logs.Info("begin sleep 20")
+	//	//defer rsp.Body.Close()
+	//	body, err := ioutil.ReadAll(rsp.Body)
+	//	if err != nil {
+	//		logs.Info(err)
+	//	}
+	//	sMovieHtml := string(body)
+	//	logs.Info("打印爬取信息")
+	//	movieInfo.Movie_name = GetMovieName(sMovieHtml)
+	//	//记录电影信息
+	//	if movieInfo.Movie_name != "" {
+	//		movieInfo.Movie_id = GetMovieId(sMovieHtml)
+	//		movieInfo.Movie_name = GetMovieName(sMovieHtml)
+	//		movieInfo.Movie_director = GetMovieDirector(sMovieHtml)
+	//		movieInfo.Movie_writer = GetMovieWriter(sMovieHtml)
+	//		movieInfo.Movie_main_character = GetMovieMainCharacters(sMovieHtml)
+	//		movieInfo.Movie_grade = GetMovieGrade(sMovieHtml)
+	//		movieInfo.Movie_type = GetMovieGenre(sMovieHtml)
+	//		movieInfo.Movie_on_time = GetMovieOnTime(sMovieHtml)
+	//		movieInfo.Movie_span = GetMovieRunningTime(sMovieHtml)
+	//		movieInfo.Movie_language = GetMovieLanguage(sMovieHtml)
+	//		movieInfo.Movie_pic = GetMoviePhoto(sMovieHtml)
+	//		movieInfo.Movie_country = GetMovieCountry(sMovieHtml)
+	//		movieInfo.Movie_summary = GetMovieSummary(sMovieHtml)
+	//		movieInfo.Movie_hot_comment = GetMovieHotComment(sMovieHtml)
+	//		movieInfo.Episode = GetEpisode(sMovieHtml)
+	//		movieInfo.Season = GetSeason(sMovieHtml)
+	//
+	//		AddMovie(&movieInfo)
+	//	}
 
-func Run(sUrl string)  {
-	logs.Info("Run！！！")
-	var movieInfo MovieInfo
-	rsp := GetRep(sUrl)
-	if rsp !=nil {
-
-		logs.Info("begin sleep 20")
-		//defer rsp.Body.Close()
-		body, err := ioutil.ReadAll(rsp.Body)
-		if err != nil {
-			logs.Info(err)
+		movieInfo, err,sMovieHtml := ReturnMovieInfoByUrl(sUrl)
+		if err==nil && movieInfo!=nil {
+			AddMovie(movieInfo)
 		}
-		sMovieHtml := string(body)
-		logs.Info("打印爬取信息")
-		movieInfo.Movie_name = GetMovieName(sMovieHtml)
-		//记录电影信息
-		if movieInfo.Movie_name != "" {
-			movieInfo.Movie_id 				= GetMovieId(sMovieHtml)
-			movieInfo.Movie_name 			= GetMovieName(sMovieHtml)
-			movieInfo.Movie_director 		= GetMovieDirector(sMovieHtml)
-			movieInfo.Movie_writer 			= GetMovieWriter(sMovieHtml)
-			movieInfo.Movie_main_character 	= GetMovieMainCharacters(sMovieHtml)
-			movieInfo.Movie_grade 			= GetMovieGrade(sMovieHtml)
-			movieInfo.Movie_type 			= GetMovieGenre(sMovieHtml)
-			movieInfo.Movie_on_time 		= GetMovieOnTime(sMovieHtml)
-			movieInfo.Movie_span 			= GetMovieRunningTime(sMovieHtml)
-			movieInfo.Movie_language 		= GetMovieLanguage(sMovieHtml)
-			movieInfo.Movie_pic 			= GetMoviePhoto(sMovieHtml)
-			movieInfo.Movie_country 		= GetMovieCountry(sMovieHtml)
-			movieInfo.Movie_summary 		= GetMovieSummary(sMovieHtml)
-			movieInfo.Movie_hot_comment 	= GetMovieHotComment(sMovieHtml)
-			movieInfo.Episode 				= GetEpisode(sMovieHtml)
-			movieInfo.Season 				= GetSeason(sMovieHtml)
-
-			AddMovie(&movieInfo)
+		if sMovieHtml == "" {
+			return
 		}
 		logs.Info("提取该页面的所有连接")
 		//如果redis数据小于100万继续提取链接
 		queueLen := GetQueueLength()
-		logs.Info("queueLen:",queueLen)
-		if queueLen<=1000000 {
+		logs.Info("queueLen:", queueLen)
+		if queueLen <= 1000000 {
 			//提取该页面的所有连接
 			urls := GetMovieUrls(sMovieHtml)
-			for _,url := range urls{
+			for _, url := range urls {
 				logs.Info(url)
 				if strings.Contains(url, "subject") {
 					PutinQueue(url)
@@ -361,8 +385,7 @@ func Run(sUrl string)  {
 		//sUrl 应当记录到 访问set中
 		AddToSet(sUrl)
 		logs.Info("链接收集完毕")
-		time.Sleep(time.Second*1)
-	}
+		time.Sleep(time.Second * 1)
 }
 
 func PutUrl(sMovieHtml string,sUrl string)  {
@@ -379,3 +402,39 @@ func PutUrl(sMovieHtml string,sUrl string)  {
 	logs.Info("链接收集完毕")
 }
 
+func ReturnMovieInfoByUrl(url string) (*MovieInfo,error,string) {
+	var movieInfo MovieInfo
+	rsp := GetRep(url)
+	if rsp != nil {
+		body, err := ioutil.ReadAll(rsp.Body)
+		if err != nil {
+			logs.Info(err)
+			return nil,err,""
+		}
+		sMovieHtml := string(body)
+		logs.Info("打印爬取信息")
+		movieInfo.Movie_name = GetMovieName(sMovieHtml)
+		//记录电影信息
+		if movieInfo.Movie_name != "" {
+			movieInfo.Movie_id = GetMovieId(sMovieHtml)
+			movieInfo.Movie_name = GetMovieName(sMovieHtml)
+			movieInfo.Movie_director = GetMovieDirector(sMovieHtml)
+			movieInfo.Movie_writer = GetMovieWriter(sMovieHtml)
+			movieInfo.Movie_main_character = GetMovieMainCharacters(sMovieHtml)
+			movieInfo.Movie_grade = GetMovieGrade(sMovieHtml)
+			movieInfo.Movie_type = GetMovieGenre(sMovieHtml)
+			movieInfo.Movie_on_time = GetMovieOnTime(sMovieHtml)
+			movieInfo.Movie_span = GetMovieRunningTime(sMovieHtml)
+			movieInfo.Movie_language = GetMovieLanguage(sMovieHtml)
+			movieInfo.Movie_pic = GetMoviePhoto(sMovieHtml)
+			movieInfo.Movie_country = GetMovieCountry(sMovieHtml)
+			movieInfo.Movie_summary = GetMovieSummary(sMovieHtml)
+			movieInfo.Movie_hot_comment = GetMovieHotComment(sMovieHtml)
+			movieInfo.Episode = GetEpisode(sMovieHtml)
+			movieInfo.Season = GetSeason(sMovieHtml)
+			return &movieInfo,nil,sMovieHtml
+		}
+		return nil,nil,sMovieHtml
+	}
+	return nil,nil,""
+}

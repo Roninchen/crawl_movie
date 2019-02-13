@@ -11,9 +11,9 @@ type MainController struct {
 }
 
 func (c *MainController) Get() {
-	c.Data["Website"] = "beego.me"
-	c.Data["Email"] = "astaxie@gmail.com"
-	c.TplName = "index.tpl"
+	c.Data["json"] = map[string]interface{}{"success": 0, "message": "111"}
+	c.ServeJSON()
+	return
 }
 
 func (c *MainController) Concurrency() {
@@ -27,5 +27,4 @@ func (c *MainController) Concurrency() {
 		logs.Info("第%d个启动",j)
 		go http.Get(url)
 	}
-
 }
