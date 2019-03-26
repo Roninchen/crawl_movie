@@ -1,0 +1,10 @@
+[Redis]
+Host = ""
+Port = "6379"
+
+[Mysql]
+Name = "fuck_hacker"
+Password = "690383f40a51d07c"
+Host = ""
+Port = "3306"
+Database =  "movie"

@@ -7,7 +7,7 @@ import (
 
 const (
 	URL_QUEUE = "url_queue"
-	URL_VISIT_SET = "url_visit_set"
+	URL_VISIT_SET = "url_visit_set1"
 	IP_QUEUE = ":ip_queue"
 )
 

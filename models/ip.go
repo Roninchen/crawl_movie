@@ -1,11 +1,15 @@
 package models
 
 import (
+	"encoding/json"
+	"github.com/astaxie/beego/logs"
 	"gopkg.in/mgo.v2/bson"
 	"github.com/parnurzeal/gorequest"
+	"io/ioutil"
 	"log"
+	"strconv"
 	"strings"
-	"net/url"
+	"crawl_movie/util"
 	"net/http"
 	"time"
 	"fmt"
@@ -18,7 +22,13 @@ type IP struct {
 	Data string        `bson:"data" json:"ip"`
 	Type string        `bson:"type" json:"type"`
 }
-
+type Result struct {
+	Ip       string  `json:"ip"`
+	Port     int     `json:"port"`
+	Location string  `json:"location,omitempty"`
+	Source   string  `json:"source"`
+	Speed    float64 `json:"speed,omitempty"`
+}
 // NewIP .
 func NewIP() *IP {
 	return &IP{
@@ -46,70 +56,33 @@ func IP66() ([]string) {
 	log.Println("IP66 done.")
 	return temp
 }
-//validate and set ip to redis
-//func Use66Ip() {
-//	    temp := IP66()
-//		//urli := url.URL{}
-//		for index := 0; index < len(temp[:len(temp)-1]); index++{
-//			//urlproxy, _ := urli.Parse(temp[index])
-//			//c := http.Client{
-//			//	Transport: &http.Transport{
-//			//		Proxy: http.ProxyURL(urlproxy),
-//			//	},
-//			//}
-//			//if resp, err := c.Get("https://movie.douban.com/subject/27133303/"); err != nil {
-//			//	log.Fatalln(err)
-//			//} else {
-//				AddIP(temp[index])
-//				//defer resp.Body.Close()
-//				//body, _ := ioutil.ReadAll(resp.Body)
-//				//fmt.Printf("%s\n", body)
-//			//}
-//		}
-//	}
+
 
 
 /**
 * 返回response
 */
 func GetRep(urls string) *http.Response {
-	ip := string(GETIP())
-	fmt.Print(ip)
-	request, _ := http.NewRequest("GET", urls, nil)
-	//随机返回User-Agent 信息
-	request.Header.Set("User-Agent", getAgent())
-	request.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-	request.Header.Set("Connection", "keep-alive")
-	proxy, err := url.Parse(ip)
-	//设置超时时间
-	timeout := time.Duration(20* time.Second)
-	fmt.Printf("使用代理:%s\n",proxy)
-	client := &http.Client{}
-	if ip != "local"{
-		client = &http.Client{
-			Transport: &http.Transport{
-				Proxy: http.ProxyURL(proxy),
-			},
-			Timeout: timeout,
+	ip :=ReturnIp()
+	logs.Info("使用代理:%s\n",ip)
+	resp, _, errs := gorequest.New().
+		Proxy(ip).
+		Get(urls).
+		Set("User-Agent", util.RandomUA()).
+		Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8").
+		Timeout(time.Second * 6).
+		End()
+
+	if errs != nil || resp.StatusCode != 200{
+
+		logs.Info("line-99:遇到了错误-并切换ip %s\n",errs)
+		if strings.Contains(urls, "subject") {
+			return GetRep(urls)
 		}
+		return nil
 	}
 
-	response, err := client.Do(request)
-	if err != nil || response.StatusCode != 200{
-
-		fmt.Printf("line-99:遇到了错误-并切换ip %s\n",err)
-		length := GetIPQueueLength()
-		if length == 0{
-			fmt.Printf("ip池暂时为空")
-			time.Sleep(1000*time.Millisecond)
-		}
-		GETIP()
-		GetRep(urls)
-		//getIp(returnIP())
-
-	}
-
-	return response
+	return resp
 }
 
 
@@ -132,4 +105,23 @@ func getAgent() string {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	len := len(agent)
 	return agent[r.Intn(len)]
+}
+
+func ReturnIp() string {
+	var result = new(Result)
+	ipurl := "http://localhost:8090/get"
+	resp, err := http.Get(ipurl)
+	if err != nil{
+		logs.Error(err)
+	}
+	body,err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		logs.Error(err)
+	}
+	err = json.Unmarshal([]byte(string(body)), &result)
+	if err != nil {
+		logs.Error(err)
+	}
+	ip :=  "http://" + result.Ip + ":" + strconv.Itoa(result.Port)
+	return ip
 }
