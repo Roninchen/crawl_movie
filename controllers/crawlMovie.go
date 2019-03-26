@@ -23,6 +23,7 @@ func (c *CrawlMovieController) CrawlMovie() {
 	//连接到redis
 	models.ConnectRedis(viper.GetString("redis.host")+":"+viper.GetString("redis.port"))
 
+
 	//爬虫入口url
 	sUrl := "https://movie.douban.com/subject/26266893/?from=playing_poster"
 	models.PutinQueue(sUrl)
