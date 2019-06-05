@@ -72,6 +72,14 @@ func GetMovie(maps map[string]string) (movieInfo []MovieInfo) {
 	}
 	return movieInfo
 }
+func GetAllMovie()(movieInfo []MovieInfo){
+	_, err := db.QueryTable("movie_info").All(movieInfo)
+	if err != nil {
+		glog.Info("数据库查询错误")
+		return nil
+	}
+	return movieInfo
+}
 func AddMovie(movie_info *MovieInfo)(int64,error){
 
 		movie :=new(MovieInfo)
@@ -307,7 +315,7 @@ func GetMovieUrls(movieHtml string)[]string{
 	return movieSets
 }
 func GetMovieGradeIsZero() (movieInfo []MovieInfo,err error) {
-	_, err = db.Raw("SELECT * FROM movie_info where movie_grade < ? and movie_on_time > ? and _modify_time < ? ORDER BY _modify_time ASC", 1, "2019-00-00 00:00:00","2019-02-07 00:00:00").QueryRows(&movieInfo)
+	_, err = db.Raw("SELECT * FROM movie_info where movie_grade < ? and movie_on_time > ? and _modify_time < ? ORDER BY _modify_time ASC", 1, "2019-00-00 00:00:00","2019-06-01 00:00:00").QueryRows(&movieInfo)
 	//_, err = db.QueryTable("movie_info").Filter("movie_grade < ?", 1).Filter("movie_on_time > ? ", "'2019-00-00 00:00:00'").All(&movieInfo)
 	if err != nil {
 		logs.Info(err)

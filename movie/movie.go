@@ -5,6 +5,7 @@ import (
 	"crawl_movie/models"
 	"encoding/json"
 	"github.com/astaxie/beego/logs"
+	"strconv"
 	"strings"
 )
 
@@ -24,7 +25,14 @@ func (o *MovieService) GetResult(ctx context.Context,in *MovieRequest)(*MovieRes
 		return result,nil
 	}
 	logs.Info("========",movieInfo[0])
-
+	//评分更新
+	int, err := strconv.ParseFloat(movieInfo[0].Movie_grade,10)
+	logs.Info(err)
+	logs.Info("当前评分",int)
+	//if int < 1 {
+	//	grade := UpdateGrade(&movieInfo[0])
+	//	movieInfo[0].Movie_grade = grade.Movie_grade
+	//}
 	//maps2 := MakeReturn(in.Params, movieInfo[0])
 	bytes, err := json.Marshal(movieInfo[0:len(movieInfo)])
 	//bytes, err := json.Marshal(maps2)
@@ -61,4 +69,30 @@ func MakeReturn(params string,movieInfo models.MovieInfo) map[string]string {
 		maps["上线日期"] = movieInfo.Movie_on_time
 	}
 	return maps
+}
+func UpdateGrade(v *models.MovieInfo) (*models.MovieInfo) {
+	movieId := strconv.FormatInt(v.Movie_id,10)
+	url := "https://movie.douban.com/subject/"+movieId +"/"
+	logs.Info("url:",url)
+	movieInfo, err, _ := models.ReturnMovieInfoByUrl(url)
+	if err != nil {
+		logs.Info(err)
+		//c.Data["json"] = map[string]interface{}{"success": 1, "message": "err","data":err}
+		//c.ServeJSON()
+	}
+	if movieInfo == nil {
+		logs.Info("movieInfo is null")
+		return v
+		//c.Data["json"] = map[string]interface{}{"success": 1, "message": "movieInfo is null","data":err}
+		//c.ServeJSON()
+	}
+	movieInfo.Id = v.Id
+	err = models.UpdateMovieGrade(movieInfo)
+	if err != nil {
+		logs.Info(err)
+		return v
+		//c.Data["json"] = map[string]interface{}{"success": 1, "message": "err","data":err}
+		//c.ServeJSON()
+	}
+	return movieInfo
 }
